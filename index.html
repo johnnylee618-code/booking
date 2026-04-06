@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>整復預約系統</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent:      #c94040;
+      --accent-dk:   #a03030;
+      --accent-lt:   #fdf5f5;
+      --holiday:     #c94040;
+      --bg:          #faf6ec;
+      --surface:     #fffef9;
+      --border:      #e0d5c5;
+      --text:        #3a2e28;
+      --muted:       #8a7060;
+      --radius:      2px;
+      --shadow:      0 1px 3px rgba(60,40,20,.08), 0 2px 8px rgba(60,40,20,.05);
+      --hover-bg:    #f5f0e5;
+      --body-stripe: repeating-linear-gradient(
+        transparent, transparent 27px,
+        rgba(180,155,120,.13) 27px, rgba(180,155,120,.13) 28px
+      );
+    }
+
+    html[data-theme="matcha"] {
+      --accent:      #6b9e74; --accent-dk: #527a5a; --accent-lt: #eaf3eb;
+      --bg:          #f5f0e8; --surface:   #fdfaf5; --border:    #ddd5c8;
+      --text:        #3a3028; --muted:     #8c7d70; --radius:    14px;
+      --shadow:      0 1px 4px rgba(80,60,40,.06), 0 4px 18px rgba(80,60,40,.07);
+      --hover-bg:    #f0ebe0; --body-stripe: none;
+    }
+    html[data-theme="aizome"] {
+      --accent:      #2a5a8c; --accent-dk: #1a3a6c; --accent-lt: #ddeaf8;
+      --bg:          #eef3f8; --surface:   #f6f9fc; --border:    #c4d4e4;
+      --text:        #1a2a3a; --muted:     #5a7a9a; --radius:    6px;
+      --shadow:      0 1px 4px rgba(20,50,90,.07), 0 4px 14px rgba(20,50,90,.06);
+      --hover-bg:    #dce8f4; --body-stripe: none;
+    }
+    html[data-theme="sakura"] {
+      --accent:      #c4607a; --accent-dk: #a0445e; --accent-lt: #fce8ed;
+      --bg:          #fdf4f6; --surface:   #fffafa; --border:    #f0d0d8;
+      --text:        #3a2030; --muted:     #9a6878; --radius:    16px;
+      --shadow:      0 1px 4px rgba(180,80,100,.06), 0 4px 14px rgba(180,80,100,.07);
+      --hover-bg:    #fde4ea; --body-stripe: none;
+    }
+    html[data-theme="sumi"] {
+      --accent:      #3a3530; --accent-dk: #1a1510; --accent-lt: #e8e4de;
+      --bg:          #f2ede8; --surface:   #faf8f5; --border:    #d8d0c4;
+      --text:        #1a1510; --muted:     #7a7060; --radius:    0px;
+      --shadow:      0 1px 3px rgba(30,20,10,.08), 0 3px 10px rgba(30,20,10,.06);
+      --hover-bg:    #e8e0d4;
+      --body-stripe: repeating-linear-gradient(
+        transparent, transparent 27px,
+        rgba(100,80,50,.08) 27px, rgba(100,80,50,.08) 28px
+      );
+    }
+    html[data-theme="light"] {
+      --accent:      #3b82f6; --accent-dk: #1d4ed8; --accent-lt: rgba(59,130,246,.1);
+      --bg:          #f1f5f9; --surface:   #ffffff; --border:    #e2e8f0;
+      --text:        #1e293b; --muted:     #64748b; --radius:    10px;
+      --shadow:      0 1px 3px rgba(0,0,0,.08), 0 4px 12px rgba(0,0,0,.06);
+      --hover-bg:    #dbeafe; --body-stripe: none;
+    }
+    html[data-theme="dark"] {
+      --accent:      #3b82f6; --accent-dk: #1d4ed8; --accent-lt: rgba(59,130,246,.15);
+      --bg:          #0f1117; --surface:   #1a1e2e; --border:    #2a2f45;
+      --text:        #e0e0e0; --muted:     #8a9bb0; --radius:    12px;
+      --shadow:      0 2px 8px rgba(0,0,0,.35);
+      --hover-bg:    #232840; --body-stripe: none;
+    }
+    html[data-theme="dark"] body { color-scheme: dark; }
+    html[data-theme="dark"] .cal-cell.other-month { opacity: .4; }
+    html[data-theme="dark"] .modal-backdrop { background: rgba(0,0,0,.6); }
+
+    html { touch-action: manipulation; height: 100%; }
+    body {
+      min-height: 100%;
+      font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      background-image: var(--body-stripe);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    /* ── Overlay ── */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(40,25,15,.52);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200;
+    }
+    .overlay-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 36px 32px;
+      width: min(380px, 90vw);
+      box-shadow: var(--shadow);
+      display: flex; flex-direction: column; gap: 16px;
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+    .overlay-card h2 {
+      font-family: 'Noto Serif JP', Georgia, serif;
+      font-size: 1.2rem; font-weight: 700;
+      color: var(--text); letter-spacing: .5px;
+      border-left: 3.5px solid var(--accent);
+      padding-left: 10px; text-align: left;
+    }
+    .overlay-card p { color: var(--muted); font-size: .9rem; }
+    .overlay-card input[type="text"] {
+      width: 100%; padding: 10px 14px;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      font-size: 1rem; font-family: inherit;
+      background: var(--bg); color: var(--text); outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .overlay-card input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-lt);
+    }
+    .login-btn {
+      width: 100%; padding: 10px;
+      background: var(--accent); color: #fff;
+      border: none; border-radius: var(--radius);
+      font-size: .95rem; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+      transition: background .15s; letter-spacing: .3px;
+    }
+    .login-btn:hover { background: var(--accent-dk); }
+
+    /* ── Header ── */
+    header {
+      position: sticky; top: 0; z-index: 50;
+      background: var(--surface);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px; height: 54px;
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 4px rgba(60,40,20,.06);
+    }
+    .app-title {
+      font-family: 'Noto Serif JP', Georgia, serif;
+      font-weight: 700; font-size: 1.05rem;
+      color: var(--text);
+      border-left: 3.5px solid var(--accent);
+      padding-left: 10px; letter-spacing: .3px;
+    }
+    .header-right { display: flex; align-items: center; gap: 8px; position: relative; }
+    .user-chip {
+      display: flex; align-items: center; gap: 5px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 5px 14px;
+      cursor: pointer; user-select: none;
+      font-size: .88rem; font-weight: 400;
+      color: var(--muted); transition: background .15s;
+    }
+    .user-chip:hover { background: var(--bg); }
+    .chip-arrow { font-size: .7rem; opacity: .7; }
+    .icon-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 1.2rem; padding: 6px;
+      border-radius: var(--radius); transition: background .15s;
+      color: var(--muted);
+    }
+    .icon-btn:hover { background: var(--bg); }
+    .dropdown {
+      position: absolute; top: calc(100% + 8px); right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      min-width: 160px; overflow: hidden; z-index: 100;
+    }
+    .dropdown-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 16px;
+      cursor: pointer; font-size: .9rem; color: var(--text);
+      transition: background .1s;
+    }
+    .dropdown-item:hover { background: var(--bg); }
+    .dropdown-item.active { font-weight: 700; color: var(--accent); }
+    .dropdown-divider { height: 1px; background: var(--border); margin: 4px 0; }
+    .dot-indicator { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex; background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .tab {
+      flex: 1; padding: 11px;
+      border: none; background: none; cursor: pointer;
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: .9rem; color: var(--muted);
+      border-bottom: 3px solid transparent;
+      transition: color .15s, border-color .15s; letter-spacing: .5px;
+    }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+    /* ── Layout ── */
+    .main-layout { display: block; }
+    @media (min-width: 641px) {
+      nav.tabs { display: none; }
+      .main-layout {
+        display: grid; grid-template-columns: 1fr 1fr;
+        align-items: start; min-height: calc(100vh - 54px);
+      }
+      .main-layout .view { display: block !important; }
+      #view-calendar {
+        border-right: 1px solid var(--border);
+        position: sticky; top: 54px;
+        max-height: calc(100vh - 54px); overflow-y: auto;
+      }
+      #view-upcoming { max-height: calc(100vh - 54px); overflow-y: auto; }
+    }
+
+    /* ── Upcoming panel heading ── */
+    .upcoming-panel-header { display: none; }
+    @media (min-width: 641px) {
+      .upcoming-panel-header {
+        display: block;
+        font-family: 'Noto Serif JP', Georgia, serif;
+        font-size: .78rem; font-weight: 700;
+        letter-spacing: 3px; color: var(--muted);
+        padding: 14px 16px 0;
+      }
+      .upcoming-panel-header::after {
+        content: ''; display: block; margin-top: 8px;
+        border-bottom: 1px dashed var(--border);
+      }
+    }
+
+    /* ── Views ── */
+    .view { padding: 0 0 80px; }
+    .hidden { display: none !important; }
+
+    /* ── Calendar Nav ── */
+    .cal-nav { display: flex; align-items: center; gap: 8px; padding: 14px 16px; }
+    .cal-title {
+      flex: 1; font-family: 'Noto Serif JP', Georgia, serif;
+      font-weight: 700; font-size: 1rem; color: var(--text);
+    }
+    .nav-btn {
+      background: none; border: 1px dashed var(--border);
+      border-radius: var(--radius); width: 32px; height: 32px;
+      font-size: 1.2rem; cursor: pointer; color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      transition: background .1s, border-color .1s;
+    }
+    .nav-btn:hover { background: var(--hover-bg); border-color: var(--accent); }
+    .today-btn {
+      padding: 5px 12px; border-radius: var(--radius);
+      border: 1px solid var(--accent); background: none;
+      color: var(--accent); font-size: .8rem; font-weight: 600;
+      cursor: pointer; letter-spacing: .5px; transition: background .1s;
+    }
+    .today-btn:hover { background: var(--accent-lt); }
+
+    /* ── Calendar Grid ── */
+    .cal-grid, .cal-cells { display: grid; grid-template-columns: repeat(7, 1fr); }
+    .cal-grid { border-left: 1px solid var(--border); border-top: 1px solid var(--border); }
+    .cal-cells { border-left: 1px solid var(--border); }
+    .cal-weekday {
+      text-align: center; padding: 5px 2px;
+      font-size: .65rem; font-weight: 600; color: var(--muted);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      border-bottom: 1px dashed var(--border);
+      letter-spacing: 1.5px; text-transform: uppercase;
+    }
+    .cal-cell {
+      height: 80px; padding: 4px 5px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px dashed var(--border);
+      cursor: pointer; background: var(--surface);
+      transition: background .1s; position: relative; overflow: hidden;
+    }
+    .cal-cell:hover { background: var(--hover-bg); }
+    .cal-cell.other-month { background: var(--bg); opacity: .6; }
+    .cal-cell.other-month .day-num { color: var(--muted); opacity: .6; }
+    .cal-cell.today .day-num-inner {
+      background: var(--accent); color: #fff; border-radius: 50%;
+      width: 22px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+    }
+    .day-num {
+      display: flex; align-items: flex-start; gap: 2px;
+      margin-bottom: 3px; line-height: 1;
+    }
+    .day-num-inner {
+      font-family: 'Noto Serif JP', Georgia, serif;
+      font-size: .82rem; font-weight: 700;
+      width: 22px; height: 22px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .day-num.holiday .day-num-inner { color: var(--holiday); }
+    .holiday-label {
+      font-size: 0.46rem; color: var(--holiday); line-height: 1.2;
+      white-space: nowrap; font-family: 'Noto Sans JP', sans-serif;
+      font-weight: 400; padding-top: 4px;
+      max-width: 38px; overflow: hidden; text-overflow: ellipsis;
+    }
+    .event-dots { display: flex; flex-wrap: wrap; gap: 2px; padding: 2px 0; }
+    .event-dot {
+      border-radius: var(--radius); padding: 1px 4px;
+      font-size: .68rem; font-weight: 500;
+      color: #fff; cursor: pointer;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 100%; display: block;
+    }
+    .more-label { font-size: .68rem; color: var(--muted); padding: 0 4px; }
+
+    /* ── Upcoming List ── */
+    .upcoming-list { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .date-group-header {
+      font-family: 'Noto Serif JP', Georgia, serif;
+      font-size: .92rem; font-weight: 700; color: var(--text);
+      padding: 5px 0 6px;
+      border-bottom: 1px dashed var(--border);
+      display: flex; align-items: baseline; gap: 6px; margin-top: 4px;
+    }
+    .event-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      display: flex; gap: 0;
+      box-shadow: var(--shadow); transition: box-shadow .15s; position: relative;
+    }
+    .event-card:hover { box-shadow: 0 2px 12px rgba(60,40,20,.12); }
+    .event-card-accent { width: 4px; border-radius: 0; flex-shrink: 0; margin-right: 12px; }
+    .event-card-body { flex: 1; min-width: 0; }
+    .event-card-title { font-weight: 600; font-size: .95rem; margin-bottom: 3px; }
+    .event-card-time { font-size: .78rem; color: var(--muted); margin-bottom: 5px; }
+    .event-card-booker { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 5px; }
+    .booker-chip {
+      font-size: .7rem; font-weight: 600;
+      color: #fff; border-radius: var(--radius); padding: 2px 7px;
+    }
+    .event-card-notes {
+      font-size: .82rem; color: var(--muted);
+      border-left: 2px solid var(--border); padding-left: 8px;
+      white-space: pre-line;
+    }
+    .event-card-actions {
+      display: flex; flex-direction: column; gap: 6px; align-items: flex-end;
+    }
+    .action-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: .8rem; color: var(--muted);
+      padding: 4px 8px; border-radius: var(--radius);
+      transition: background .1s, color .1s; white-space: nowrap;
+    }
+    .action-btn:hover { background: var(--bg); color: var(--text); }
+    .action-btn.del:hover { color: var(--holiday); }
+
+    /* ── FAB ── */
+    .fab {
+      position: fixed; bottom: 24px; right: 20px;
+      width: 52px; height: 52px; border-radius: 3px;
+      background: var(--accent); color: #fff;
+      border: none; font-size: 1.7rem; line-height: 1;
+      cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,.2);
+      transition: background .15s; z-index: 40;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .fab:hover { background: var(--accent-dk); }
+
+    /* ── Modal ── */
+    .modal {
+      position: fixed; inset: 0; z-index: 150;
+      display: flex; align-items: flex-end; justify-content: center;
+    }
+    @media (min-width: 600px) { .modal { align-items: center; } }
+    .modal-backdrop { position: absolute; inset: 0; background: rgba(40,25,15,.48); }
+    .modal-card {
+      position: relative; background: var(--surface);
+      border-radius: var(--radius);
+      width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto;
+      box-shadow: var(--shadow); display: flex; flex-direction: column;
+      border: 1px solid var(--border);
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px 12px; border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; background: var(--surface);
+    }
+    .modal-header h3 {
+      font-family: 'Noto Serif JP', Georgia, serif;
+      font-size: 1rem; color: var(--text);
+      border-left: 3px solid var(--accent); padding-left: 8px;
+    }
+    .modal-close {
+      background: none; border: none; cursor: pointer;
+      font-size: 1rem; color: var(--muted); padding: 4px;
+      border-radius: var(--radius); transition: background .1s;
+    }
+    .modal-close:hover { background: var(--bg); }
+    .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .modal-body label {
+      display: block; font-size: .83rem; font-weight: 600;
+      color: var(--muted); margin-bottom: 4px; letter-spacing: .3px;
+    }
+    .required { color: var(--holiday); }
+    .modal-body input[type="text"],
+    .modal-body input[type="date"],
+    .modal-body input[type="time"],
+    .modal-body textarea {
+      width: 100%; padding: 9px 12px;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      font-size: .95rem; outline: none; background: var(--bg);
+      font-family: inherit; color: var(--text);
+    }
+    .modal-body input:focus,
+    .modal-body textarea:focus {
+      border-color: var(--accent);
+      background: var(--surface);
+      box-shadow: 0 0 0 3px var(--accent-lt);
+    }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* ── Booker display in modal ── */
+    .booker-display {
+      display: inline-flex; align-items: center;
+      padding: 6px 14px; border-radius: var(--radius);
+      font-size: .88rem; font-weight: 600; color: #fff;
+      letter-spacing: .3px;
+    }
+
+    /* ── Modal footer ── */
+    .modal-footer {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 20px; border-top: 1px solid var(--border);
+      position: sticky; bottom: 0; background: var(--surface);
+    }
+    .spacer { flex: 1; }
+    .btn-primary {
+      padding: 8px 22px; border-radius: var(--radius);
+      background: var(--accent); color: #fff; border: none;
+      font-size: .93rem; font-weight: 600; cursor: pointer;
+      letter-spacing: .3px; transition: background .15s;
+    }
+    .btn-primary:hover { background: var(--accent-dk); }
+    .btn-secondary {
+      padding: 8px 18px; border-radius: var(--radius);
+      background: var(--bg); color: var(--text);
+      border: 1px solid var(--border);
+      font-size: .93rem; cursor: pointer; transition: background .15s;
+    }
+    .btn-secondary:hover { background: var(--hover-bg); }
+    .btn-danger {
+      padding: 8px 14px; border-radius: var(--radius);
+      background: none; color: var(--holiday);
+      border: 1px solid var(--holiday);
+      font-size: .9rem; cursor: pointer; transition: background .15s;
+    }
+    .btn-danger:hover { background: var(--accent-lt); }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center; padding: 52px 24px;
+      color: var(--muted); font-size: .95rem;
+    }
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: 12px; opacity: .7; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    @media (max-width: 480px) {
+      .cal-cell { height: 68px; padding: 3px; }
+      .event-dot { font-size: .62rem; }
+      .event-card { padding: 9px 10px; }
+      .row-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Login Overlay ── -->
+<div id="login-overlay" class="overlay">
+  <div class="overlay-card">
+    <h2>整復預約系統</h2>
+    <p>請輸入您的姓名以進入系統</p>
+    <input type="text" id="login-name" placeholder="您的姓名" maxlength="20" autocomplete="off" />
+    <button id="login-btn" class="login-btn">進入系統</button>
+  </div>
+</div>
+
+<!-- ── Header ── -->
+<header>
+  <div class="header-left">
+    <span class="app-title">整復預約</span>
+  </div>
+  <div class="header-right">
+    <button id="theme-btn" class="icon-btn" title="切換主題">🎨</button>
+    <div id="theme-dropdown" class="dropdown hidden"></div>
+    <div id="user-chip" class="user-chip" title="切換使用者">
+      <span id="user-chip-name">…</span>
+      <span class="chip-arrow">▾</span>
+    </div>
+    <div id="user-dropdown" class="dropdown hidden"></div>
+  </div>
+</header>
+
+<!-- ── Tabs (mobile) ── -->
+<nav class="tabs">
+  <button class="tab active" data-tab="upcoming">近期預約</button>
+  <button class="tab" data-tab="calendar">月曆</button>
+</nav>
+
+<!-- ── Main Layout ── -->
+<div class="main-layout">
+
+  <!-- Calendar View -->
+  <div id="view-calendar" class="view hidden">
+    <div class="cal-nav">
+      <button id="cal-prev" class="nav-btn">&#8249;</button>
+      <span id="cal-title" class="cal-title"></span>
+      <button id="cal-next" class="nav-btn">&#8250;</button>
+      <button id="cal-today" class="today-btn">今天</button>
+    </div>
+    <div class="cal-grid">
+      <div class="cal-weekday">一</div>
+      <div class="cal-weekday">二</div>
+      <div class="cal-weekday">三</div>
+      <div class="cal-weekday">四</div>
+      <div class="cal-weekday">五</div>
+      <div class="cal-weekday">六</div>
+      <div class="cal-weekday">日</div>
+    </div>
+    <div id="cal-cells" class="cal-cells"></div>
+  </div>
+
+  <!-- Upcoming View -->
+  <div id="view-upcoming" class="view">
+    <div class="upcoming-panel-header">近期預約</div>
+    <div id="upcoming-list" class="upcoming-list"></div>
+  </div>
+
+</div>
+
+<!-- ── FAB ── -->
+<button id="fab" class="fab" title="新增預約">＋</button>
+
+<!-- ── Booking Modal ── -->
+<div id="event-modal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="modal-title">新增預約</h3>
+      <button class="modal-close" id="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <label>服務項目 <span class="required">*</span></label>
+      <input id="ev-title" type="text" placeholder="例如：推拿、整脊、拔罐…" maxlength="60" />
+
+      <div class="row-2">
+        <div>
+          <label>日期 <span class="required">*</span></label>
+          <input id="ev-date" type="date" />
+        </div>
+        <div>
+          <label>時間 <span class="required">*</span></label>
+          <input id="ev-time" type="time" />
+        </div>
+      </div>
+
+      <label>預約人</label>
+      <div id="ev-booker-wrap">
+        <span id="ev-booker" class="booker-display"></span>
+      </div>
+
+      <label>備註</label>
+      <textarea id="ev-notes" rows="3" placeholder="例如：部位說明、特殊需求…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button id="ev-delete" class="btn-danger hidden">刪除</button>
+      <div class="spacer"></div>
+      <button id="ev-cancel" class="btn-secondary">取消</button>
+      <button id="ev-save" class="btn-primary">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Firebase + App Script ── -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getFirestore, collection, doc,
+    addDoc, updateDoc, deleteDoc,
+    onSnapshot, serverTimestamp,
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // ── Disable double-tap zoom ──────────────────────────────────────────────────
+  ;(function () {
+    let lastTap = 0;
+    document.addEventListener('touchend', e => {
+      const now = Date.now();
+      if (now - lastTap < 300) e.preventDefault();
+      lastTap = now;
+    }, { passive: false });
+  })();
+
+  // ── Firebase ─────────────────────────────────────────────────────────────────
+  const firebaseConfig = {
+    apiKey:            "AIzaSyDsyV2lltw3OzlG3QHovTMOoAkVev_Nrbc",
+    authDomain:        "booking-system-24ba9.firebaseapp.com",
+    projectId:         "booking-system-24ba9",
+    storageBucket:     "booking-system-24ba9.firebasestorage.app",
+    messagingSenderId: "630354590648",
+    appId:             "1:630354590648:web:00a6f14643219fa1e12d4d",
+    measurementId:     "G-B91MNGL951"
+  };
+  const app         = initializeApp(firebaseConfig);
+  const db          = getFirestore(app);
+  const bookingsCol = collection(db, 'bookings');
+
+  // ── Themes ───────────────────────────────────────────────────────────────────
+  const THEMES = [
+    { id: 'techo',  name: '手帳風',     dot: '#c94040' },
+    { id: 'matcha', name: '日系抹茶風', dot: '#6b9e74' },
+    { id: 'aizome', name: '藍染風',     dot: '#2a5a8c' },
+    { id: 'sakura', name: '桜風',       dot: '#c4607a' },
+    { id: 'sumi',   name: '墨風',       dot: '#4a4a4a' },
+    { id: 'light',  name: '亮色',       dot: '#3b82f6' },
+    { id: 'dark',   name: '暗色',       dot: '#8a9bb0' },
+  ];
+
+  function loadTheme() { applyTheme(localStorage.getItem('bs_theme') || 'techo'); }
+  function applyTheme(id) {
+    document.documentElement.dataset.theme = id;
+    localStorage.setItem('bs_theme', id);
+    document.querySelectorAll('#theme-dropdown .dropdown-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.themeId === id);
+    });
+  }
+  function renderThemeDropdown() {
+    const current = localStorage.getItem('bs_theme') || 'techo';
+    const dd = document.getElementById('theme-dropdown');
+    dd.innerHTML = THEMES.map(t => `
+      <div class="dropdown-item${t.id === current ? ' active' : ''}" data-theme-id="${t.id}">
+        <span class="dot-indicator" style="background:${t.dot}"></span>${t.name}
+      </div>
+    `).join('');
+    dd.querySelectorAll('.dropdown-item').forEach(el => {
+      el.addEventListener('click', () => { applyTheme(el.dataset.themeId); dd.classList.add('hidden'); });
+    });
+  }
+
+  // ── Taiwan public holidays ────────────────────────────────────────────────────
+  const TW_HOLIDAYS = {
+    '**-01-01': '元旦',       '**-02-28': '和平紀念日',
+    '**-04-04': '兒童節',     '**-05-01': '勞動節',
+    '**-09-28': '教師節',     '**-10-10': '國慶日',
+    '**-10-25': '台灣光復節', '**-12-25': '行憲紀念日',
+    '2025-01-27': '小年夜',   '2025-01-28': '除夕',
+    '2025-01-29': '春節',     '2025-01-30': '春節',
+    '2025-01-31': '春節',     '2025-04-03': '清明補假',
+    '2025-05-30': '端午補假', '2025-06-01': '端午節',
+    '2025-09-29': '教師節補假','2025-10-05': '中秋節',
+    '2025-10-06': '中秋補假', '2025-10-24': '光復節補假',
+    '2026-02-16': '除夕',     '2026-02-17': '春節',
+    '2026-02-18': '春節',     '2026-02-19': '春節',
+    '2026-02-20': '小年夜補假','2026-02-27': '和平紀念日補假',
+    '2026-04-03': '兒童節補假','2026-04-06': '清明節補假',
+    '2026-06-19': '端午補假', '2026-06-20': '端午節',
+    '2026-09-25': '中秋補假', '2026-09-27': '中秋節',
+    '2026-10-09': '國慶日補假','2026-10-26': '光復節補假',
+  };
+  const TW_HOLIDAY_RANGES = [
+    ['2025-01-25','2025-02-02'],['2025-02-28','2025-03-02'],
+    ['2025-04-03','2025-04-06'],['2025-05-30','2025-06-01'],
+    ['2025-09-27','2025-09-29'],['2025-10-04','2025-10-06'],
+    ['2025-10-10','2025-10-12'],['2025-10-24','2025-10-26'],
+    ['2026-02-14','2026-02-22'],['2026-02-27','2026-03-01'],
+    ['2026-04-03','2026-04-06'],['2026-05-01','2026-05-03'],
+    ['2026-06-19','2026-06-21'],['2026-09-25','2026-09-28'],
+    ['2026-10-09','2026-10-11'],['2026-10-24','2026-10-26'],
+    ['2026-12-25','2026-12-27'],
+  ];
+  function getHoliday(dateStr) {
+    if (TW_HOLIDAYS[dateStr]) return TW_HOLIDAYS[dateStr];
+    return TW_HOLIDAYS[`**${dateStr.slice(4)}`] || null;
+  }
+  function isHolidayRange(dateStr) {
+    return TW_HOLIDAY_RANGES.some(([s, e]) => dateStr >= s && dateStr <= e);
+  }
+
+  // ── Color palette ─────────────────────────────────────────────────────────────
+  const COLOR_PALETTE = [
+    '#4f46e5','#e11d48','#0891b2','#16a34a',
+    '#d97706','#7c3aed','#db2777','#0369a1',
+  ];
+  function userColor(name) {
+    let hash = 0;
+    for (const ch of name) hash += ch.charCodeAt(0);
+    return COLOR_PALETTE[hash % COLOR_PALETTE.length];
+  }
+
+  // ── State ─────────────────────────────────────────────────────────────────────
+  const state = {
+    username:     '',
+    bookings:     [],
+    currentMonth: new Date(),
+    activeTab:    'upcoming',
+    editingId:    null,
+  };
+
+  // ── LocalStorage ──────────────────────────────────────────────────────────────
+  function loadLocal() {
+    state.username = localStorage.getItem('bs_username') || '';
+  }
+  function saveUsername(name) {
+    state.username = name;
+    localStorage.setItem('bs_username', name);
+  }
+
+  // ── Firestore real-time listener ──────────────────────────────────────────────
+  function startListener() {
+    onSnapshot(bookingsCol, snap => {
+      state.bookings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderAll();
+    }, err => console.error('Firestore error:', err));
+  }
+
+  // ── Firestore CRUD ────────────────────────────────────────────────────────────
+  async function fsSave(payload, id) {
+    if (id) {
+      await updateDoc(doc(db, 'bookings', id), { ...payload, updatedAt: serverTimestamp() });
+    } else {
+      await addDoc(bookingsCol, { ...payload, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    }
+  }
+  async function fsDelete(id) {
+    await deleteDoc(doc(db, 'bookings', id));
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────────
+  function renderAll() { renderCalendar(); renderUpcoming(); }
+
+  // ── Calendar ──────────────────────────────────────────────────────────────────
+  function renderCalendar() {
+    const year  = state.currentMonth.getFullYear();
+    const month = state.currentMonth.getMonth();
+    document.getElementById('cal-title').textContent = `${year} 年 ${month + 1} 月`;
+
+    const firstDay    = (new Date(year, month, 1).getDay() + 6) % 7;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrev  = new Date(year, month, 0).getDate();
+    const todayStr    = toDateStr(new Date());
+
+    const cells = document.getElementById('cal-cells');
+    cells.innerHTML = '';
+
+    const bookingMap = {};
+    state.bookings.forEach(bk => {
+      if (!bookingMap[bk.date]) bookingMap[bk.date] = [];
+      bookingMap[bk.date].push(bk);
+    });
+
+    for (let i = firstDay - 1; i >= 0; i--) {
+      const d = daysInPrev - i;
+      const ds = toDateStr(new Date(year, month - 1, d));
+      cells.appendChild(makeCell(ds, d, true, bookingMap[ds] || [], todayStr));
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      const ds = toDateStr(new Date(year, month, d));
+      cells.appendChild(makeCell(ds, d, false, bookingMap[ds] || [], todayStr));
+    }
+    const trailing = (firstDay + daysInMonth) % 7 === 0 ? 0 : 7 - (firstDay + daysInMonth) % 7;
+    for (let d = 1; d <= trailing; d++) {
+      const ds = toDateStr(new Date(year, month + 1, d));
+      cells.appendChild(makeCell(ds, d, true, bookingMap[ds] || [], todayStr));
+    }
+  }
+
+  function makeCell(dateStr, dayNum, otherMonth, bookings, todayStr) {
+    const holiday = getHoliday(dateStr);
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell' +
+      (otherMonth ? ' other-month' : '') +
+      (dateStr === todayStr ? ' today' : '');
+
+    const numEl = document.createElement('div');
+    const isRed = holiday !== null || isHolidayRange(dateStr);
+    numEl.className = 'day-num' + (isRed ? ' holiday' : '');
+    const innerEl = document.createElement('span');
+    innerEl.className = 'day-num-inner';
+    innerEl.textContent = dayNum;
+    numEl.appendChild(innerEl);
+    if (holiday) {
+      const label = document.createElement('span');
+      label.className = 'holiday-label';
+      label.textContent = holiday;
+      numEl.appendChild(label);
+    }
+    cell.appendChild(numEl);
+    cell.addEventListener('click', () => openModal(null, dateStr));
+
+    const dots = document.createElement('div');
+    dots.className = 'event-dots';
+    bookings.slice(0, 3).forEach(bk => {
+      const dot = document.createElement('span');
+      dot.className = 'event-dot';
+      dot.style.background = userColor(bk.booker || '?');
+      dot.textContent = bk.title;
+      dot.title = `${bk.title}（${bk.booker}）`;
+      dot.addEventListener('click', e => { e.stopPropagation(); openModal(bk.id); });
+      dots.appendChild(dot);
+    });
+    if (bookings.length > 3) {
+      const more = document.createElement('span');
+      more.className = 'more-label';
+      more.textContent = `+${bookings.length - 3} 更多`;
+      dots.appendChild(more);
+    }
+    cell.appendChild(dots);
+    return cell;
+  }
+
+  // ── Upcoming ──────────────────────────────────────────────────────────────────
+  function renderUpcoming() {
+    const container = document.getElementById('upcoming-list');
+    const now = new Date();
+    const upcoming = state.bookings
+      .filter(bk => new Date(`${bk.date}T${bk.time || '23:59'}`) >= now)
+      .sort((a, b) =>
+        new Date(`${a.date}T${a.time || '00:00'}`) -
+        new Date(`${b.date}T${b.time || '00:00'}`)
+      )
+      .slice(0, 60);
+
+    container.innerHTML = '';
+    if (!upcoming.length) {
+      container.innerHTML = '<div class="empty-state"><div class="icon">📋</div>近期沒有預約</div>';
+      return;
+    }
+    let lastDate = '';
+    upcoming.forEach(bk => {
+      if (bk.date !== lastDate) {
+        lastDate = bk.date;
+        const header = document.createElement('div');
+        header.className = 'date-group-header';
+        header.textContent = formatDateHeader(bk.date);
+        container.appendChild(header);
+      }
+      container.appendChild(makeBookingCard(bk));
+    });
+  }
+
+  function makeBookingCard(bk) {
+    const color = userColor(bk.booker || '?');
+    const card  = document.createElement('div');
+    card.className = 'event-card';
+    card.innerHTML = `
+      <div class="event-card-accent" style="background:${color}"></div>
+      <div class="event-card-body">
+        <div class="event-card-title">${escHtml(bk.title)}</div>
+        ${bk.time
+          ? `<div class="event-card-time">🕐 ${bk.time}</div>`
+          : '<div class="event-card-time">全天</div>'}
+        <div class="event-card-booker">
+          <span class="booker-chip" style="background:${color}">${escHtml(bk.booker || '')}</span>
+        </div>
+        ${bk.notes ? `<div class="event-card-notes">${escHtml(bk.notes)}</div>` : ''}
+      </div>
+      <div class="event-card-actions">
+        <button class="action-btn edit-btn">編輯</button>
+        <button class="action-btn del del-btn">刪除</button>
+      </div>
+    `;
+    card.querySelector('.edit-btn').addEventListener('click', () => openModal(bk.id));
+    card.querySelector('.del-btn').addEventListener('click', () => deleteBooking(bk.id));
+    return card;
+  }
+
+  // ── Modal ─────────────────────────────────────────────────────────────────────
+  function openModal(bookingId, prefillDate) {
+    state.editingId = bookingId || null;
+    const bk = bookingId ? state.bookings.find(b => b.id === bookingId) : null;
+
+    document.getElementById('modal-title').textContent = bk ? '編輯預約' : '新增預約';
+    document.getElementById('ev-title').value = bk ? bk.title : '';
+    document.getElementById('ev-date').value  = bk ? bk.date  : (prefillDate || toDateStr(new Date()));
+    document.getElementById('ev-time').value  = bk ? bk.time  : '';
+    document.getElementById('ev-notes').value = bk ? bk.notes : '';
+
+    const bookerName = bk ? bk.booker : state.username;
+    const bookerEl   = document.getElementById('ev-booker');
+    bookerEl.textContent   = bookerName;
+    bookerEl.style.background = userColor(bookerName);
+
+    const delBtn = document.getElementById('ev-delete');
+    bk ? delBtn.classList.remove('hidden') : delBtn.classList.add('hidden');
+
+    document.getElementById('event-modal').classList.remove('hidden');
+    document.getElementById('ev-title').focus();
+  }
+
+  function closeModal() {
+    document.getElementById('event-modal').classList.add('hidden');
+    state.editingId = null;
+  }
+
+  async function saveBooking() {
+    const title = document.getElementById('ev-title').value.trim();
+    const date  = document.getElementById('ev-date').value;
+    const time  = document.getElementById('ev-time').value;
+    if (!title || !date || !time) { alert('請填寫服務項目、日期與時間'); return; }
+
+    const bk = state.editingId ? state.bookings.find(b => b.id === state.editingId) : null;
+    const payload = {
+      title,
+      date,
+      time,
+      booker: bk ? bk.booker : state.username,
+      notes:  document.getElementById('ev-notes').value.trim(),
+    };
+    try {
+      await fsSave(payload, state.editingId);
+      closeModal();
+    } catch (err) { alert('儲存失敗：' + err.message); }
+  }
+
+  async function deleteBooking(id) {
+    const target = id || state.editingId;
+    if (!target) return;
+    if (!confirm('確定要刪除這筆預約嗎？')) return;
+    try { await fsDelete(target); closeModal(); }
+    catch (err) { alert('刪除失敗：' + err.message); }
+  }
+
+  // ── Login overlay ─────────────────────────────────────────────────────────────
+  function showLoginOverlay() {
+    document.getElementById('login-overlay').classList.remove('hidden');
+    setTimeout(() => document.getElementById('login-name').focus(), 100);
+  }
+  function hideLoginOverlay() {
+    document.getElementById('login-overlay').classList.add('hidden');
+  }
+  function submitLogin() {
+    const name = document.getElementById('login-name').value.trim();
+    if (!name) { document.getElementById('login-name').focus(); return; }
+    saveUsername(name);
+    document.getElementById('user-chip-name').textContent = name;
+    hideLoginOverlay();
+    startListener();
+  }
+
+  // ── User dropdown ─────────────────────────────────────────────────────────────
+  function renderUserDropdown() {
+    const dd = document.getElementById('user-dropdown');
+    dd.innerHTML = `
+      <div class="dropdown-item" id="dd-change-user">
+        <span class="dot-indicator" style="background:${userColor(state.username)}"></span>
+        ${escHtml(state.username)}
+      </div>
+      <div class="dropdown-divider"></div>
+      <div class="dropdown-item" id="dd-switch">🔄 切換使用者</div>
+    `;
+    dd.querySelector('#dd-switch').addEventListener('click', () => {
+      dd.classList.add('hidden');
+      document.getElementById('login-name').value = '';
+      showLoginOverlay();
+    });
+  }
+
+  // ── Utilities ─────────────────────────────────────────────────────────────────
+  function toDateStr(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function formatDateHeader(dateStr) {
+    const d     = new Date(dateStr + 'T00:00:00');
+    const today = new Date(); today.setHours(0,0,0,0);
+    const diff  = Math.round((d - today) / 86400000);
+    const days  = ['日','一','二','三','四','五','六'];
+    const weekLabel = `週${days[d.getDay()]}`;
+    const dateLabel = `${d.getMonth()+1} 月 ${d.getDate()} 日 (${weekLabel})`;
+    if (diff === 0) return `今天 (${weekLabel})`;
+    if (diff === 1) return `明天 (${weekLabel})`;
+    if (diff === 2) return `後天 (${weekLabel})`;
+    return dateLabel;
+  }
+
+  // fsSave alias (fixes naming inside saveBooking)
+  async function fsBookingSave(payload, id) { return fsSave(payload, id); }
+
+  // ── Event listeners ───────────────────────────────────────────────────────────
+  document.getElementById('login-btn').addEventListener('click', submitLogin);
+  document.getElementById('login-name').addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitLogin();
+  });
+
+  document.getElementById('cal-prev').addEventListener('click', () => {
+    state.currentMonth = new Date(state.currentMonth.getFullYear(), state.currentMonth.getMonth() - 1, 1);
+    renderCalendar();
+  });
+  document.getElementById('cal-next').addEventListener('click', () => {
+    state.currentMonth = new Date(state.currentMonth.getFullYear(), state.currentMonth.getMonth() + 1, 1);
+    renderCalendar();
+  });
+  document.getElementById('cal-today').addEventListener('click', () => {
+    state.currentMonth = new Date(); renderCalendar();
+  });
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      state.activeTab = tab.dataset.tab;
+      document.getElementById('view-calendar').classList.toggle('hidden', state.activeTab !== 'calendar');
+      document.getElementById('view-upcoming').classList.toggle('hidden', state.activeTab !== 'upcoming');
+    });
+  });
+
+  document.getElementById('fab').addEventListener('click', () => openModal(null));
+  document.getElementById('ev-save').addEventListener('click', saveBooking);
+  document.getElementById('ev-cancel').addEventListener('click', closeModal);
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  document.getElementById('ev-delete').addEventListener('click', () => deleteBooking(null));
+  document.querySelector('.modal-backdrop').addEventListener('click', closeModal);
+
+  document.getElementById('user-chip').addEventListener('click', e => {
+    e.stopPropagation();
+    renderUserDropdown();
+    document.getElementById('user-dropdown').classList.toggle('hidden');
+  });
+  document.getElementById('theme-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    renderThemeDropdown();
+    document.getElementById('theme-dropdown').classList.toggle('hidden');
+  });
+  document.addEventListener('click', () => {
+    document.getElementById('user-dropdown').classList.add('hidden');
+    document.getElementById('theme-dropdown').classList.add('hidden');
+  });
+
+  // ── Init ──────────────────────────────────────────────────────────────────────
+  (function init() {
+    loadTheme();
+    loadLocal();
+    if (!state.username) {
+      showLoginOverlay();
+    } else {
+      document.getElementById('user-chip-name').textContent = state.username;
+      startListener();
+    }
+  })();
+
+</script>
+</body>
+</html>

@@ -461,6 +461,8 @@
       box-shadow: 0 0 0 3px var(--accent-lt);
     }
     .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .row-2 > div { min-width: 0; }
+    @media (max-width: 599px) { .row-2 { grid-template-columns: 1fr; } }
 
     /* ── Booker display in modal ── */
     .booker-display {
@@ -515,7 +517,6 @@
       .cal-cell { height: 68px; padding: 3px; }
       .event-dot { font-size: .62rem; }
       .event-card { padding: 9px 10px; }
-      .row-2 { grid-template-columns: 1fr; }
     }
   </style>
 </head>

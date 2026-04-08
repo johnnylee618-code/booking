@@ -415,6 +415,14 @@
       box-shadow: var(--shadow); display: flex; flex-direction: column;
       border: 1px solid var(--border);
     }
+    @media (max-width: 599px) {
+      .modal-card {
+        max-width: 100%; width: 100%;
+        max-height: 92dvh;
+        border-radius: var(--radius) var(--radius) 0 0;
+        border-bottom: none;
+      }
+    }
     .modal-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 16px 20px 12px; border-bottom: 1px solid var(--border);

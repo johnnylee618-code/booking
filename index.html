@@ -124,15 +124,42 @@
       border-color: var(--accent);
       box-shadow: 0 0 0 3px var(--accent-lt);
     }
-    .login-btn {
-      width: 100%; padding: 10px;
-      background: var(--accent); color: #fff;
-      border: none; border-radius: var(--radius);
-      font-size: .95rem; font-weight: 600;
-      cursor: pointer; font-family: inherit;
-      transition: background .15s; letter-spacing: .3px;
+    /* ── Name button grid (login) ── */
+    .name-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
     }
-    .login-btn:hover { background: var(--accent-dk); }
+    .name-btn {
+      padding: 11px 8px;
+      background: var(--bg); color: var(--text);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      font-size: .95rem; font-family: inherit; font-weight: 500;
+      cursor: pointer; transition: background .15s, border-color .15s;
+      letter-spacing: .3px;
+    }
+    .name-btn:hover, .name-btn:active {
+      background: var(--accent-lt); border-color: var(--accent); color: var(--accent);
+    }
+    /* ── Service checkbox grid ── */
+    .service-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    .service-item {
+      display: flex; align-items: center; gap: 7px;
+      padding: 8px 10px;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      background: var(--bg); cursor: pointer;
+      font-size: .88rem; color: var(--text);
+      transition: background .15s, border-color .15s;
+      user-select: none;
+    }
+    .service-item input[type="checkbox"] {
+      accent-color: var(--accent); width: 15px; height: 15px;
+      cursor: pointer; margin: 0; flex-shrink: 0;
+    }
+    .service-item:has(input:checked) {
+      background: var(--accent-lt); border-color: var(--accent);
+      color: var(--accent); font-weight: 500;
+    }
 
     /* ── Header ── */
     header {
@@ -490,9 +517,17 @@
 <div id="login-overlay" class="overlay">
   <div class="overlay-card">
     <h2>整復預約系統</h2>
-    <p>請輸入您的姓名以進入系統</p>
-    <input type="text" id="login-name" placeholder="您的姓名" maxlength="20" autocomplete="off" />
-    <button id="login-btn" class="login-btn">進入系統</button>
+    <p>請選擇您的身份以進入系統</p>
+    <div class="name-grid">
+      <button class="name-btn" data-name="仁雄">仁雄</button>
+      <button class="name-btn" data-name="賴師傅">賴師傅</button>
+      <button class="name-btn" data-name="瓊慧">瓊慧</button>
+      <button class="name-btn" data-name="泳嫻">泳嫻</button>
+      <button class="name-btn" data-name="敏敏">敏敏</button>
+      <button class="name-btn" data-name="睿娟">睿娟</button>
+      <button class="name-btn" data-name="小沈">小沈</button>
+      <button class="name-btn" data-name="賴志閎">賴志閎</button>
+    </div>
   </div>
 </div>
 
@@ -562,7 +597,18 @@
     </div>
     <div class="modal-body">
       <label>服務項目 <span class="required">*</span></label>
-      <input id="ev-title" type="text" placeholder="例如：推拿、整脊、拔罐…" maxlength="60" />
+      <div class="service-grid" id="ev-service-grid">
+        <label class="service-item"><input type="checkbox" value="經絡拍打"><span>經絡拍打</span></label>
+        <label class="service-item"><input type="checkbox" value="整脊推拿"><span>整脊推拿</span></label>
+        <label class="service-item"><input type="checkbox" value="溫罐調理"><span>溫罐調理</span></label>
+        <label class="service-item"><input type="checkbox" value="指壓按摩"><span>指壓按摩</span></label>
+        <label class="service-item"><input type="checkbox" value="足底按摩"><span>足底按摩</span></label>
+        <label class="service-item"><input type="checkbox" value="牛角撥筋"><span>牛角撥筋</span></label>
+        <label class="service-item"><input type="checkbox" value="拔罐"><span>拔罐</span></label>
+        <label class="service-item"><input type="checkbox" value="刮痧"><span>刮痧</span></label>
+        <label class="service-item"><input type="checkbox" value="能量機拍打"><span>能量機拍打</span></label>
+        <label class="service-item"><input type="checkbox" value="臥式拉筋"><span>臥式拉筋</span></label>
+      </div>
 
       <div class="row-2">
         <div>
@@ -895,7 +941,11 @@
     const bk = bookingId ? state.bookings.find(b => b.id === bookingId) : null;
 
     document.getElementById('modal-title').textContent = bk ? '編輯預約' : '新增預約';
-    document.getElementById('ev-title').value = bk ? bk.title : '';
+    // 清空所有 checkbox，若為編輯則勾選對應項目
+    const saved = bk && bk.title ? bk.title.split('、') : [];
+    document.querySelectorAll('#ev-service-grid input[type="checkbox"]').forEach(cb => {
+      cb.checked = saved.includes(cb.value);
+    });
     document.getElementById('ev-date').value  = bk ? bk.date  : (prefillDate || toDateStr(new Date()));
     document.getElementById('ev-time').value  = bk ? bk.time  : '';
     document.getElementById('ev-notes').value = bk ? bk.notes : '';
@@ -909,7 +959,6 @@
     bk ? delBtn.classList.remove('hidden') : delBtn.classList.add('hidden');
 
     document.getElementById('event-modal').classList.remove('hidden');
-    document.getElementById('ev-title').focus();
   }
 
   function closeModal() {
@@ -918,10 +967,12 @@
   }
 
   async function saveBooking() {
-    const title = document.getElementById('ev-title').value.trim();
+    const checkedServices = [...document.querySelectorAll('#ev-service-grid input[type="checkbox"]:checked')]
+      .map(cb => cb.value);
+    const title = checkedServices.join('、');
     const date  = document.getElementById('ev-date').value;
     const time  = document.getElementById('ev-time').value;
-    if (!title || !date || !time) { alert('請填寫服務項目、日期與時間'); return; }
+    if (!title || !date || !time) { alert('請選擇至少一項服務項目，並填寫日期與時間'); return; }
 
     const bk = state.editingId ? state.bookings.find(b => b.id === state.editingId) : null;
     const payload = {
@@ -948,14 +999,11 @@
   // ── Login overlay ─────────────────────────────────────────────────────────────
   function showLoginOverlay() {
     document.getElementById('login-overlay').classList.remove('hidden');
-    setTimeout(() => document.getElementById('login-name').focus(), 100);
   }
   function hideLoginOverlay() {
     document.getElementById('login-overlay').classList.add('hidden');
   }
-  function submitLogin() {
-    const name = document.getElementById('login-name').value.trim();
-    if (!name) { document.getElementById('login-name').focus(); return; }
+  function selectUser(name) {
     saveUsername(name);
     document.getElementById('user-chip-name').textContent = name;
     hideLoginOverlay();
@@ -975,7 +1023,6 @@
     `;
     dd.querySelector('#dd-switch').addEventListener('click', () => {
       dd.classList.add('hidden');
-      document.getElementById('login-name').value = '';
       showLoginOverlay();
     });
   }
@@ -1006,9 +1053,8 @@
   async function fsBookingSave(payload, id) { return fsSave(payload, id); }
 
   // ── Event listeners ───────────────────────────────────────────────────────────
-  document.getElementById('login-btn').addEventListener('click', submitLogin);
-  document.getElementById('login-name').addEventListener('keydown', e => {
-    if (e.key === 'Enter') submitLogin();
+  document.querySelectorAll('.name-btn').forEach(btn => {
+    btn.addEventListener('click', () => selectUser(btn.dataset.name));
   });
 
   document.getElementById('cal-prev').addEventListener('click', () => {

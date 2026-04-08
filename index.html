@@ -959,7 +959,7 @@
       cb.checked = saved.includes(cb.value);
     });
     document.getElementById('ev-date').value  = bk ? bk.date  : (prefillDate || toDateStr(new Date()));
-    document.getElementById('ev-time').value  = bk ? bk.time  : '';
+    document.getElementById('ev-time').value  = bk ? bk.time  : new Date().toTimeString().slice(0,5);
     document.getElementById('ev-notes').value = bk ? bk.notes : '';
 
     const bookerName = bk ? bk.booker : state.username;

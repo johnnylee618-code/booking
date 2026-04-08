@@ -450,10 +450,12 @@
     .modal-body input[type="date"],
     .modal-body input[type="time"],
     .modal-body textarea {
+      display: block;
       width: 100%; max-width: 100%; min-width: 0; padding: 9px 12px;
       border: 1px solid var(--border); border-radius: var(--radius);
       font-size: .95rem; outline: none; background: var(--bg);
       font-family: inherit; color: var(--text);
+      -webkit-appearance: none; appearance: none;
     }
     .modal-body input:focus,
     .modal-body textarea:focus {
@@ -537,6 +539,7 @@
       <button class="name-btn" data-name="小沈">小沈</button>
       <button class="name-btn" data-name="賴志閎">賴志閎</button>
     </div>
+    <p style="font-size:.75rem; color:var(--muted); text-align:right; margin-top:4px;">v1.0</p>
   </div>
 </div>
 
